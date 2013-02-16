@@ -1,0 +1,56 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block content_title %}{% endblock %}
+
+{% block content %}
+    <div id="content-main">
+        <table>
+            <thead>
+                <tr>
+                    <th>
+                        {{ original.parameter.description|default:original.parameter.name }}
+                        &nbsp;—&nbsp;
+                        {{ original.source }}
+                    </th>
+                    <th>
+                        {% trans "Data" %}
+                    </th>
+                </tr>
+            </thead>
+            <tr>
+                <td style="width:100%">
+                    <div id="graph-{{ original.id }}" style="width:100%; height: 300px; margin-bottom: 2em;">
+                    </div>
+                </td>
+                <td>
+                    <div style="width:200px; height: 300px; overflow: scroll;">
+                        <table>
+                            {% for val in original.get_values %}
+                                <tr>
+                                    <td>
+                                        {{ val.datetime|date:"Y.m.d H:i:s" }}
+                                    </td>
+                                    <td>
+                                        {{ val.value }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <script id="source">
+            $(function () {
+                $.plot($('#graph-{{ original.id }}'), [
+                    {{ original.get_jsoned_values }}
+                ], {
+                    xaxis: {
+                        mode: "time"
+                    }
+                });
+            });
+        </script>
+    </div>
+{% endblock %}

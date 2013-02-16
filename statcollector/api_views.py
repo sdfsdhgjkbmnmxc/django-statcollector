@@ -45,7 +45,7 @@ def data(request, name, kind=None, source=None):
             except ValueError, value:
                 msg = u'Invalid {}: {} at line #{}\n'.format(kind, value, i)
                 return HttpResponseServerError(msg)
-        return HttpResponse('OK')
+        return HttpResponse('OK\n')
 
     try:
         value = Parameter.objects.get(**kw).get_values().latest()

@@ -9,7 +9,7 @@ urlpatterns = patterns(
     url(
         '^'
         '(?:(?P<kind>%s):)?'
-        '(?P<name>[^:/ ]{1,%d})'
+        '(?P<name>[^:/@ ]{1,%d})'
         '(?:@(?P<source>[^/ ]{1,%d}))?'
         '/' % (
             '|'.join(typecast),

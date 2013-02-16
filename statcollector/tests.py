@@ -3,7 +3,7 @@ import unittest
 from django.core.urlresolvers import reverse
 from django.test.client import Client
 from statcollector.api_views import data, description
-from statcollector.models import Parameter, Metric
+from statcollector.models import Parameter, Metric, Source
 
 
 class RawPostClient(Client):
@@ -153,10 +153,21 @@ class TestCase(unittest.TestCase):
             u'какое-то событие',
         )
         self.assertEqual(response.status_code, 200, response.content)
-        self.assertEqual(response.content.strip(), 'OK',
-                         response.content)
+        self.assertEqual(response.content.strip(), 'OK', response.content)
+        metric = Metric.get(Parameter.get('string', 'zz.f')).get_values()
         self.assertEqual(
-            map(unicode, Metric.get(Parameter.get('string', 'zz.f')).get_values()),
+            map(unicode, metric),
             ['some event', u'какое-то событие'],
         )
 
+    def test_003_source(self):
+        c = RawPostClient()
+
+        # set data to int:zz.f@host1
+        url = reverse(data, kwargs=dict(name='zz.f', source='host1'))
+        response = c.rawpost(url, '42')
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.content.strip(), 'OK')
+
+        metric = Metric.get(Parameter.get('int', 'zz.f'), Source.get('host1'))
+        self.assertEqual(map(unicode, metric.get_values()), ['42'])

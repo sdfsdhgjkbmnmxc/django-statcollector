@@ -4,6 +4,7 @@ import decimal
 from django.db import models
 from django.utils.translation import ugettext_lazy
 from orderable.models import Orderable
+import ujson
 
 from statcollector import conf
 
@@ -15,6 +16,8 @@ class Source(models.Model):
     MAX_NAME_LENGTH = 512
     name = models.CharField(ugettext_lazy('name'), db_index=True,
                             max_length=MAX_NAME_LENGTH)
+    description = models.TextField(ugettext_lazy('description'),
+                                   blank=True, default='')
     creation_datetime = models.DateTimeField(auto_now_add=True)
 
     @classmethod
@@ -27,6 +30,13 @@ class Source(models.Model):
 
     def __unicode__(self):
         return u'@{}'.format(self.name)
+
+    def __unicode__(self):
+        if self.description:
+            return u'{} (@{})'.format(self.description, self.name)
+        else:
+            return u'@{}'.format(self.name)
+
 
     class Meta:
         ordering = ('name',)
@@ -107,7 +117,7 @@ class Parameter(models.Model):
     name = models.CharField(ugettext_lazy('name'), db_index=True,
                             max_length=MAX_NAME_LENGTH)
     kind = models.CharField(ugettext_lazy('type'), max_length=16,
-                             choices=[(x, x) for x in typecast])
+                            choices=[(x, x) for x in typecast])
     description = models.TextField(ugettext_lazy('description'),
                                    blank=True, default='')
     creation_datetime = models.DateTimeField(auto_now_add=True)
@@ -117,7 +127,10 @@ class Parameter(models.Model):
     max_num_entries = models.BigIntegerField(default=conf.MAX_NUM_ENTRIES)
 
     def __unicode__(self):
-        return u'{}:{}'.format(self.kind, self.name)
+        if self.description:
+            return u'{} ({}:{})'.format(self.description, self.kind, self.name)
+        else:
+            return u'{}:{}'.format(self.kind, self.name)
 
     @classmethod
     def get(cls, kind, name, description=None):
@@ -144,8 +157,12 @@ class Parameter(models.Model):
 
 
 class Metric(Orderable):
-    parameter = models.ForeignKey('Parameter')
-    source = models.ForeignKey('Source', blank=True, null=True)
+    parameter = models.ForeignKey('Parameter', editable=False)
+    source = models.ForeignKey('Source', editable=False, blank=True, null=True)
+
+    @property
+    def values_class(self):
+        return typecast[self.parameter.kind]
 
     @classmethod
     def get(cls, parameter, source=None):
@@ -156,10 +173,13 @@ class Metric(Orderable):
         return instance
 
     def get_values(self):
-        return typecast[self.parameter.kind].objects.filter(metric=self)
+        return self.values_class.objects.filter(metric=self)
+
+    def get_jsoned_values(self, mx=1000):
+        return _export_values(self.get_values()[:mx])
 
     def add_value(self, dt, value):
-        value = typecast[self.parameter.kind](
+        value = self.values_class(
             metric=self,
             datetime=dt,
             value=value,
@@ -172,10 +192,13 @@ class Metric(Orderable):
         if self.source:
             return u'{}@{}'.format(self.parameter.name, self.source.name)
         else:
-            return self.parameter
+            return self.parameter.name
 
     class Meta(Orderable.Meta):
         verbose_name = ugettext_lazy('metric')
         verbose_name_plural = ugettext_lazy('metrics')
 
 
+def _export_values(objects):
+    values = objects.values_list('datetime', 'value')
+    return ujson.dumps([(int(d.strftime('%s')) * 1000, v) for d, v in values])

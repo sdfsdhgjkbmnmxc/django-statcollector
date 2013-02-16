@@ -1,1 +1,2 @@
 -e git+git://github.com/incuna/django-orderable.git@9dfea6645c97d661259014e64f78d8ec264322bd#egg=django-orderable
+ujson
