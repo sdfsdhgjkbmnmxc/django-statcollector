@@ -1,16 +1,26 @@
 # -*- coding:utf-8 -*-
 from django.contrib import admin
-import models
+from orderable.admin import OrderableAdmin
+
+from statcollector import models
 
 
-class SrcAdmin(admin.ModelAdmin):
+class SourceAdmin(admin.ModelAdmin):
     save_on_top = True
     list_display = (
         'name',
     )
 
 
-class ParamAdmin(admin.ModelAdmin):
+class MetricAdmin(OrderableAdmin):
+    save_on_top = True
+    list_display = (
+        'parameter',
+        'source',
+    )
+
+
+class ParameterAdmin(admin.ModelAdmin):
     save_on_top = True
     list_display = (
         'type_',
@@ -22,5 +32,6 @@ class ParamAdmin(admin.ModelAdmin):
     )
 
 
-admin.site.register(models.Src, SrcAdmin)
-admin.site.register(models.Param, ParamAdmin)
+admin.site.register(models.Source, SourceAdmin)
+admin.site.register(models.Parameter, ParameterAdmin)
+admin.site.register(models.Metric, MetricAdmin)

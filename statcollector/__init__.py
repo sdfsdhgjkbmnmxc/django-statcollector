@@ -1,3 +1,5 @@
+from django.conf import settings
 
-def store_int(val, dt):
-    pass
+
+if not'orderable' in settings.INSTALLED_APPS:
+    raise Exception("Add 'orderable' to settings.INSTALLED_APPS")

@@ -3,11 +3,12 @@ import decimal
 
 from django.db import models
 from django.utils.translation import ugettext_lazy
+from orderable.models import Orderable
 
 from statcollector import conf
 
 
-default_type = 'int'
+default_kind = 'int'
 
 
 class Source(models.Model):
@@ -15,6 +16,14 @@ class Source(models.Model):
     name = models.CharField(ugettext_lazy('name'), db_index=True,
                             max_length=MAX_NAME_LENGTH)
     creation_datetime = models.DateTimeField(auto_now_add=True)
+
+    @classmethod
+    def get(cls, name):
+        name = (name or '').strip()
+        if not name:
+            return None
+        instance, _created = cls.objects.get_or_create(name=name)
+        return instance
 
     def __unicode__(self):
         return u'@{}'.format(self.name)
@@ -26,13 +35,12 @@ class Source(models.Model):
 
 
 class _Value(models.Model):
-    param = models.ForeignKey('Parameter')
-    src = models.ForeignKey('Source', blank=True, null=True)
+    metric = models.ForeignKey('Metric')
     datetime = models.DateTimeField()
     typecast = None
 
     def __unicode__(self):
-        return str(self.value)
+        return unicode(self.value)
 
     def clean(self):
         self.value = self.typecast(self.value)
@@ -98,7 +106,7 @@ class Parameter(models.Model):
     MAX_NAME_LENGTH = 512
     name = models.CharField(ugettext_lazy('name'), db_index=True,
                             max_length=MAX_NAME_LENGTH)
-    type_ = models.CharField(ugettext_lazy('type'), max_length=16,
+    kind = models.CharField(ugettext_lazy('type'), max_length=16,
                              choices=[(x, x) for x in typecast])
     description = models.TextField(ugettext_lazy('description'),
                                    blank=True, default='')
@@ -109,28 +117,18 @@ class Parameter(models.Model):
     max_num_entries = models.BigIntegerField(default=conf.MAX_NUM_ENTRIES)
 
     def __unicode__(self):
-        return u'{}:{}'.format(self.type_, self.name)
+        return u'{}:{}'.format(self.kind, self.name)
 
     @classmethod
-    def get(cls, name, type_=None, description=None):
-        if not type_:
-            type_ = default_type
-        assert type_ in typecast
+    def get(cls, kind, name, description=None):
+        if not kind in typecast:
+            raise ValueError('Bad kind: {}'.format(kind))
         name = name[:cls.MAX_NAME_LENGTH]
-        instance, _created = cls.objects.get_or_create(type_=type_, name=name)
+        instance, _created = cls.objects.get_or_create(kind=kind, name=name)
         if description and instance.description != description:
             instance.description = description
             instance.save()
         return instance
-
-    def get_values(self):
-        return typecast[self.type_].objects.filter(data=self)
-
-    def add_value(self, dt, value):
-        value = typecast[self.type_](data=self, datetime=dt, value=value)
-        value.clean()
-        value.save()
-        return value
 
     def clean(self):
         self.name = self.name.strip()
@@ -143,5 +141,41 @@ class Parameter(models.Model):
         ordering = ('name',)
         verbose_name = ugettext_lazy('parameter')
         verbose_name_plural = ugettext_lazy('parameters')
+
+
+class Metric(Orderable):
+    parameter = models.ForeignKey('Parameter')
+    source = models.ForeignKey('Source', blank=True, null=True)
+
+    @classmethod
+    def get(cls, parameter, source=None):
+        instance, _created = cls.objects.get_or_create(
+            parameter=parameter,
+            source=source,
+        )
+        return instance
+
+    def get_values(self):
+        return typecast[self.parameter.kind].objects.filter(metric=self)
+
+    def add_value(self, dt, value):
+        value = typecast[self.parameter.kind](
+            metric=self,
+            datetime=dt,
+            value=value,
+        )
+        value.clean()
+        value.save()
+        return value
+
+    def __unicode__(self):
+        if self.source:
+            return u'{}@{}'.format(self.parameter.name, self.source.name)
+        else:
+            return self.parameter
+
+    class Meta(Orderable.Meta):
+        verbose_name = ugettext_lazy('metric')
+        verbose_name_plural = ugettext_lazy('metrics')
 
 

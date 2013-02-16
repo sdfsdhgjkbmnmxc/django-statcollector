@@ -1,2 +1,4 @@
 *.pot
 *.pyc
+.idea
+.settings
