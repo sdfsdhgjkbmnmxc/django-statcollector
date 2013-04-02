@@ -11,7 +11,7 @@ urlpatterns = patterns(
         '(?:(?P<kind>%s):)?'
         '(?P<name>[^:/@ ]{1,%d})'
         '(?:@(?P<source>[^/ ]{1,%d}))?'
-        '/' % (
+        '/?' % (
             '|'.join(typecast),
             Parameter.MAX_NAME_LENGTH,
             Source.MAX_NAME_LENGTH,
