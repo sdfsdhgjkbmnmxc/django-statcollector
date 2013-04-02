@@ -29,14 +29,10 @@ class Source(models.Model):
         return instance
 
     def __unicode__(self):
-        return u'@{}'.format(self.name)
-
-    def __unicode__(self):
         if self.description:
-            return u'{} (@{})'.format(self.description, self.name)
+            return u'{} ({})'.format(self.name, self.description)
         else:
-            return u'@{}'.format(self.name)
-
+            return self.name
 
     class Meta:
         ordering = ('name',)
@@ -128,7 +124,7 @@ class Parameter(models.Model):
 
     def __unicode__(self):
         if self.description:
-            return u'{} ({}:{})'.format(self.description, self.kind, self.name)
+            return u'{}:{} ({})'.format(self.kind, self.name, self.description)
         else:
             return u'{}:{}'.format(self.kind, self.name)
 
