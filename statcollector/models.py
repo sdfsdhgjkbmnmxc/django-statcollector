@@ -236,7 +236,6 @@ class Report(Orderable):
 
     def get_jsoned_metrics(self, mx=1000):
         exported = self.export_metrics(mx)
-        print ujson.dumps(exported)
         return ujson.dumps(exported)
 
     class Meta(Orderable.Meta):
