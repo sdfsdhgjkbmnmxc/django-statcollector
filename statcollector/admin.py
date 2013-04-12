@@ -4,7 +4,7 @@ from django.db import models
 from django.forms import widgets
 from django.utils.translation import ugettext_lazy
 from orderable.admin import OrderableAdmin
-from statcollector.models import Parameter, Metric, Source
+from statcollector.models import Parameter, Metric, Source, Report
 
 
 class SourceAdmin(admin.ModelAdmin):
@@ -100,6 +100,30 @@ class ParameterAdmin(admin.ModelAdmin):
     }
 
 
+class ReportAdmin(OrderableAdmin):
+    change_form_template = 'admin/report_change_form.html'
+    list_display = (
+        'sort_order_display',
+        'name',
+    )
+    list_display_links = (
+        'name',
+    )
+    list_filter = (
+        'metrics',
+    )
+
+
+    class Media:
+        js = (
+            'jquery.min.js',
+            'jquery-ui.min.js',
+            'flot/jquery.flot.js',
+            'flot/jquery.flot.time.js',
+        )
+
+
 admin.site.register(Source, SourceAdmin)
 admin.site.register(Parameter, ParameterAdmin)
 admin.site.register(Metric, MetricAdmin)
+admin.site.register(Report, ReportAdmin)

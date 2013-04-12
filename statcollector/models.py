@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import decimal
+import decimal, time
 
 from django.db import models
 from django.utils.translation import ugettext_lazy
@@ -171,8 +171,13 @@ class Metric(Orderable):
     def get_values(self):
         return self.values_class.objects.filter(metric=self)
 
+    def export_values(self, mx=1000):
+        values = self.get_values().values_list('datetime', 'value')[:mx]
+        return [(int(time.mktime(d.timetuple())) * 1000, v) for d, v in values]
+
     def get_jsoned_values(self, mx=1000):
-        return _export_values(self.get_values()[:mx])
+        exported = self.export_values(mx)
+        return ujson.dumps(exported)
 
     def add_value(self, dt, value):
         value = self.values_class(
@@ -195,6 +200,45 @@ class Metric(Orderable):
         verbose_name_plural = ugettext_lazy('metrics')
 
 
-def _export_values(objects):
-    values = objects.values_list('datetime', 'value')
-    return ujson.dumps([(int(d.strftime('%s')) * 1000, v) for d, v in values])
+report_views = {
+    'diagram': (1, ugettext_lazy('diagram')),
+    'table': (2, ugettext_lazy('table')),
+    'all': (3, ugettext_lazy('diagram and table')),
+}
+
+
+class Report(Orderable):
+    MAX_NAME_LENGTH = 512
+    name = models.CharField(ugettext_lazy('name'), db_index=True,
+                            max_length=MAX_NAME_LENGTH)
+    metrics = models.ManyToManyField(Metric)
+    view = models.IntegerField(choices=report_views.values())
+
+    @classmethod
+    def get(cls, name, metrics, view):
+        name = (name or '').strip()
+        if not (name and metrics and view):
+            return None
+        instance, _created = cls.objects.get_or_create(
+            name=name, metrics=metrics, view=view)
+        return instance
+
+    def __metric_series(self, metric, mx):
+        #return metric.export_values(mx)
+        return {
+            'data':  metric.export_values(mx),
+            'label': '{0}'.format(metric),
+        }
+
+    def export_metrics(self, mx=1000):
+        metrics = self.metrics.all()[:mx]
+        return [self.__metric_series(m, mx) for m in metrics]
+
+    def get_jsoned_metrics(self, mx=1000):
+        exported = self.export_metrics(mx)
+        print ujson.dumps(exported)
+        return ujson.dumps(exported)
+
+    class Meta(Orderable.Meta):
+        verbose_name = ugettext_lazy('report')
+        verbose_name_plural = ugettext_lazy('reports')
