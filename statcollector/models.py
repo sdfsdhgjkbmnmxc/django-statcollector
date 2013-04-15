@@ -224,19 +224,27 @@ class Report(Orderable):
         return instance
 
     def __metric_series(self, metric, mx):
-        #return metric.export_values(mx)
         return {
             'data':  metric.export_values(mx),
             'label': '{0}'.format(metric),
         }
 
+    def get_metrics(self):
+        return self.metrics.all()
+
     def export_metrics(self, mx=1000):
-        metrics = self.metrics.all()[:mx]
+        metrics = self.get_metrics()[:mx]
         return [self.__metric_series(m, mx) for m in metrics]
 
     def get_jsoned_metrics(self, mx=1000):
         exported = self.export_metrics(mx)
         return ujson.dumps(exported)
+
+    def is_diagram(self):
+        return self.view & report_views['diagram'][0]
+
+    def is_table(self):
+        return self.view & report_views['table'][0]
 
     class Meta(Orderable.Meta):
         verbose_name = ugettext_lazy('report')
