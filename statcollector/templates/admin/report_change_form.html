@@ -19,27 +19,29 @@
                 {% if original.is_table %}
                     <tr>
                     <td>
-                        {% report_table original.get_metrics metrics_table %}
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    {% for col in metrics_table.cols %}
-                                        <th>{{ col }}</th>
-                                    {% endfor %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for row in metrics_table.rows|dictsortreversed:"title" %}
+                        <div style="max-height: 300px; overflow: scroll;">
+                            {% report_table original.get_metrics metrics_table %}
+                            <table style="width: 100%; border: 0 none;">
+                                <thead>
                                     <tr>
-                                        <th>{{ row.title|date:"d.m.y H:i:s" }}</th>
-                                        {% for cell in row.cells %}
-                                            <td>{{ cell }}</td>
+                                        <th></th>
+                                        {% for col in metrics_table.cols %}
+                                            <th>{{ col }}</th>
                                         {% endfor %}
                                     </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {% for row in metrics_table.rows|dictsortreversed:"title" %}
+                                        <tr>
+                                            <th>{{ row.title|date:"d.m.y H:i:s" }}</th>
+                                            {% for cell in row.cells %}
+                                                <td>{{ cell }}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </td>
                 </tr>
                 {% endif %}

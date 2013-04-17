@@ -113,6 +113,11 @@ class ReportAdmin(OrderableAdmin):
         'metrics',
     )
 
+    def get_form(self, request, obj=None, **kwargs):
+        # Скрываем кнопку добавления новой метрики
+        form = super(ReportAdmin, self).get_form(request, obj, **kwargs)
+        form.base_fields['metrics'].widget.can_add_related = False
+        return form
 
     class Media:
         js = (
