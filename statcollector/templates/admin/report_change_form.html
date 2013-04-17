@@ -18,20 +18,20 @@
                 {% if original.is_table %}
                     <tr>
                     <td>
-                        {% metrics_table original.get_metrics metrics_table %}
+                        {% report_table original.get_metrics metrics_table %}
                         <table>
                             <thead>
                                 <tr>
                                     <th></th>
                                     {% for col in metrics_table.cols %}
-                                        <th>{{ col|date:"d.m.y H:i:s" }}</th>
+                                        <th>{{ col }}</th>
                                     {% endfor %}
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for row in metrics_table.rows %}
+                                {% for row in metrics_table.rows|dictsortreversed:"title" %}
                                     <tr>
-                                        <th>{{ row.title }}</th>
+                                        <th>{{ row.title|date:"d.m.y H:i:s" }}</th>
                                         {% for cell in row.cells %}
                                             <td>{{ cell }}</td>
                                         {% endfor %}
