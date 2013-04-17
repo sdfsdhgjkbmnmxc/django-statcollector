@@ -3,9 +3,10 @@
 
 {% block content_title %}{% endblock %}
 
-{% block content %}
-    <div id="content-main">
-        <table style="width:100%">
+{% block object-tools %}
+    {{ block.super }}
+    <fieldset class="module aligned">
+        <table style="width:100%; border: 0 none;">
             <tbody>
                 {% if original.is_diagram %}
                     <tr>
@@ -57,5 +58,5 @@
                 });
             </script>
         {% endif %}
-    </div>
+    </fieldset>
 {% endblock %}
