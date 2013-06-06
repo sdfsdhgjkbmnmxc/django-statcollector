@@ -79,7 +79,7 @@ class FloatValue(_Value):
 
 class DecimalValue(_Value):
     typecast = decimal.Decimal
-    value = models.DecimalField(max_digits=15, decimal_places=6)
+    value = models.DecimalField(max_digits=18, decimal_places=6)
 
     class Meta(_Value.Meta):
         verbose_name = ugettext_lazy('decimal value')
